@@ -38,6 +38,15 @@ public:
 	VkCommandPool _commandPool;
 	VkCommandBuffer _mainCommandBuffer;
 
+	// --- vulkan renderpass --- 
+	VkRenderPass _renderPass;
+
+	std::vector<VkFramebuffer> _framebuffers;
+
+	// --- vulkan mainloop ---
+	VkSemaphore _presentSemaphore, _renderSemaphore;
+	VkFence _renderFence;
+
 	//initializes everything in the engine
 	void init();
 
@@ -56,4 +65,12 @@ private:
 	void init_swapchain();
 
 	void init_commands();
+
+	// --- vulkan renderpass method ---
+	void init_default_renderpass();
+
+	void init_framebuffers();
+
+	// --- vulkan mainloop ---
+	void init_sync_structures();
 };
