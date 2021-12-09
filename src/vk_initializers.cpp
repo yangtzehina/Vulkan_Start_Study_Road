@@ -22,3 +22,16 @@ VkCommandBufferAllocateInfo vkinit::command_buffer_allocate_info(VkCommandPool p
 	info.level = level;
 	return info;
 }
+
+VkPipelineShaderStageCreateInfo vkinit::pipeline_shader_stage_create_info(VkShaderStageFlagBits stage, VkShaderModule shaderModule)
+{
+	VkPipelineShaderStageCreateInfo info{};
+	info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	info.pNext = nullptr;
+
+	info.stage = stage;
+	info.module = shaderModule;
+	info.pName = "main";
+	return info;
+}
+

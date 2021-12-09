@@ -73,4 +73,10 @@ private:
 
 	// --- vulkan mainloop ---
 	void init_sync_structures();
+
+	// --- load shader file ---
+	bool load_shader_module(const char* filePath, VkShaderModule* outShaderModule);
+
+	// --- init pipelines ---
+	void init_pipelines();
 };
