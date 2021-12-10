@@ -49,7 +49,12 @@ public:
 
 	// --- vulkan pipeline ---
 	VkPipelineLayout _trianglePipelineLayout;
+	// try to set two pipeline to switch shader
 	VkPipeline _trianglePipeline;
+	VkPipeline _redTrianglePipeline;
+
+	// --- 标记变量,用来切换shader ---
+	int _selectedShader{ 0 };
 
 	//initializes everything in the engine
 	void init();
