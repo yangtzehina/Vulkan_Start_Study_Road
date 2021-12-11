@@ -5,6 +5,27 @@
 
 #include <vk_types.h>
 #include <vector>
+#include <deque>
+#include <functional>  
+
+struct DeletionQueue
+{
+	std::deque<std::function<void()>> deletors;
+
+	void push_function(std::function<void()>&& function)
+	{
+		deletors.push_back(function);
+	}
+
+	void flush() {
+		for (auto it = deletors.rbegin(); it != deletors.rend(); it++)
+		{
+			(*it)();
+		}
+
+		deletors.clear();
+	}
+};
 
 class VulkanEngine {
 public:
@@ -55,6 +76,9 @@ public:
 
 	// --- 标记变量,用来切换shader ---
 	int _selectedShader{ 0 };
+
+	// --- init delete queue ---
+	DeletionQueue _mainDeletionQueue;
 
 	//initializes everything in the engine
 	void init();
