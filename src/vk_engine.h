@@ -7,6 +7,7 @@
 #include <vector>
 #include <deque>
 #include <functional>  
+#include <vk_mesh.h>
 
 struct DeletionQueue
 {
@@ -80,6 +81,13 @@ public:
 	// --- init delete queue ---
 	DeletionQueue _mainDeletionQueue;
 
+	// --- init vulkan memory allocator ---
+	VmaAllocator _allocator;
+
+	// --- mesh pipeline ---
+	VkPipeline _meshPipeline;
+	Mesh _trangleMesh;
+
 	//initializes everything in the engine
 	void init();
 
@@ -112,6 +120,10 @@ private:
 
 	// --- init pipelines ---
 	void init_pipelines();
+
+	// --- mesh pipelines ---
+	void load_meshes();
+	void upload_mesh(Mesh& mesh);
 };
 
 class PipelineBuilder {
