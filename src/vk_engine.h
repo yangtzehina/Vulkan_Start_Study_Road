@@ -120,6 +120,12 @@ public:
 	//depth format
 	VkFormat _depthFormat;
 
+	//Add Render Object
+	std::vector<RenderObject> _renderables;
+
+	std::unordered_map<std::string, Material> _materials;
+	std::unordered_map<std::string, Mesh> _meshes;
+
 	//initializes everything in the engine
 	void init();
 
@@ -156,6 +162,18 @@ private:
 	// --- mesh pipelines ---
 	void load_meshes();
 	void upload_mesh(Mesh& mesh);
+
+	// --- Add material ---
+	Material* create_material(VkPipeline pipeline, VkPipelineLayout layout, const std::string& name);
+
+	Material* get_material(const std::string& name);
+
+	Mesh* get_mesh(const std::string& name);
+
+	void draw_objects(VkCommandBuffer cmd, RenderObject* first, int count);
+
+	// --- init scene ---
+	void init_scene();
 };
 
 class PipelineBuilder {
