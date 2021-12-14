@@ -8,6 +8,13 @@
 #include <deque>
 #include <functional>  
 #include <vk_mesh.h>
+#include <glm/glm.hpp>
+
+struct MeshPushConstants
+{
+	glm::vec4 data;
+	glm::mat4 render_matrix;
+};
 
 struct DeletionQueue
 {
@@ -26,6 +33,19 @@ struct DeletionQueue
 
 		deletors.clear();
 	}
+};
+
+struct Material
+{
+	VkPipeline pipeline;
+	VkPipelineLayout pipelineLayout;
+};
+
+struct RenderObject
+{
+	Mesh* mesh;
+	Material* material;
+	glm::mat4 transformMatrix;
 };
 
 class VulkanEngine {
@@ -88,6 +108,18 @@ public:
 	VkPipeline _meshPipeline;
 	Mesh _trangleMesh;
 
+	VkPipelineLayout _meshPipelineLayout;
+
+	//add object mesh
+	Mesh _monkeyMesh;
+
+	//add depth texture
+	VkImageView _depthImageView;
+	AllocatedImage _depthImage;
+
+	//depth format
+	VkFormat _depthFormat;
+
 	//initializes everything in the engine
 	void init();
 
@@ -137,6 +169,8 @@ public:
 	VkPipelineColorBlendAttachmentState _colorBlendAttachment;
 	VkPipelineMultisampleStateCreateInfo _multisampling;
 	VkPipelineLayout _pipelineLayout;
+	//add depth 
+	VkPipelineDepthStencilStateCreateInfo _depthStencil;
 
 	VkPipeline build_pipeline(VkDevice device, VkRenderPass pass);
 };
