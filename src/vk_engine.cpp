@@ -82,8 +82,12 @@ void VulkanEngine::cleanup()
 void VulkanEngine::draw()
 {
 	//等待GPU渲染完最后一帧
-	VK_CHECK(vkWaitForFences(_device, 1, &_renderFence, true, 1000000000));
-	VK_CHECK(vkResetFences(_device, 1, &_renderFence));
+	VK_CHECK(vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1000000000));
+	VK_CHECK(vkResetFences(_device, 1, &get_current_frame()._renderFence));
+
+	VK_CHECK(vkResetCommandBuffer(get_current_frame()._mainCommandBuffer, 0));
+
+
 	
 	//请求获取swapchain上的图片
 	uint32_t swapchainImageIndex;
@@ -299,15 +303,18 @@ void VulkanEngine::init_commands()
 {
 	VkCommandPoolCreateInfo commandPoolInfo = vkinit::command_pool_create_info(_graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
-	VK_CHECK(vkCreateCommandPool(_device, &commandPoolInfo, nullptr, &_commandPool));
+	for (int i = 0; i < FRAME_OVERLAP; i++)
+	{
+		VK_CHECK(vkCreateCommandPool(_device, &commandPoolInfo, nullptr, &_frames[i]._commandPool));
 
-	VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(_commandPool, 1);
+		VkCommandBufferAllocateInfo cmdAllocInfo = vkinit::command_buffer_allocate_info(_frames[i]._commandPool, 1);
 
-	VK_CHECK(vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_mainCommandBuffer));
+		VK_CHECK(vkAllocateCommandBuffers(_device, &cmdAllocInfo, &_frames[i]._mainCommandBuffer));
 
-	_mainDeletionQueue.push_function([=]() {
-		vkDestroyCommandPool(_device, _commandPool, nullptr);
-	});
+		_mainDeletionQueue.push_function([=]() {
+			vkDestroyCommandPool(_device, _frames[i]._commandPool, nullptr);
+		});
+	}
 }
 
 void VulkanEngine::init_default_renderpass()
@@ -403,26 +410,26 @@ void VulkanEngine::init_framebuffers()
 
 void VulkanEngine::init_sync_structures()
 {
-	VkFenceCreateInfo fenceCreateInfo = {};
-	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	fenceCreateInfo.pNext = nullptr;
+	VkFenceCreateInfo fenceCreateInfo = vkinit::fence_create_info(VK_FENCE_CREATE_SIGNALED_BIT);
+	
+	VkSemaphoreCreateInfo semaphoreCreateInfo = vkinit::semaphore_create_info();
 
-	fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+	for (int i = 0; i < FRAME_OVERLAP; i++)
+	{
+		VK_CHECK(vkCreateFence(_device, &fenceCreateInfo, nullptr, &_frames[i]._renderFence));
 
-	VK_CHECK(vkCreateFence(_device, &fenceCreateInfo, nullptr, &_renderFence));
+		_mainDeletionQueue.push_function([=]() {
+			vkDestroyFence(_device, _frames[i]._renderFence, nullptr);
+		});
 
-	VkSemaphoreCreateInfo semaphoreCreateInfo = {};
-	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-	semaphoreCreateInfo.pNext = nullptr;
-	semaphoreCreateInfo.flags = 0;
+		VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_frames[i]._presentSemaphore));
+		VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_frames[i]._renderSemaphore));
 
-	VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_presentSemaphore));
-	VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_renderSemaphore));
-
-	_mainDeletionQueue.push_function([=]() {
-		vkDestroySemaphore(_device, _presentSemaphore, nullptr);
-		vkDestroySemaphore(_device, _renderSemaphore, nullptr);
-	});
+		_mainDeletionQueue.push_function([=]() {
+			vkDestroySemaphore(_device, _frames[i]._presentSemaphore, nullptr);
+			vkDestroySemaphore(_device, _frames[i]._renderSemaphore, nullptr);
+		});
+	}
 }
 
 bool VulkanEngine::load_shader_module(const char* filePath, VkShaderModule* outShaderModule)
@@ -797,4 +804,9 @@ void VulkanEngine::init_scene()
 			_renderables.push_back(tri);
 		}
 	}
+}
+
+FrameData& VulkanEngine::get_current_frame()
+{
+	return _frames[_frameNumber % FRAME_OVERLAP];
 }

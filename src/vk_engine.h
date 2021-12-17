@@ -10,6 +10,14 @@
 #include <vk_mesh.h>
 #include <glm/glm.hpp>
 
+struct FrameData {
+	VkSemaphore _presentSemaphore, _renderSemaphore;
+	VkFence _renderFence;
+
+	VkCommandPool _commandPool;
+	VkCommandBuffer _mainCommandBuffer;
+};
+
 struct MeshPushConstants
 {
 	glm::vec4 data;
@@ -47,6 +55,8 @@ struct RenderObject
 	Material* material;
 	glm::mat4 transformMatrix;
 };
+
+constexpr unsigned int FRAME_OVERLAP = 2;
 
 class VulkanEngine {
 public:
@@ -125,6 +135,11 @@ public:
 
 	std::unordered_map<std::string, Material> _materials;
 	std::unordered_map<std::string, Mesh> _meshes;
+
+	//Add double buffering
+	FrameData _frames[FRAME_OVERLAP];
+
+	FrameData& get_current_frame();
 
 	//initializes everything in the engine
 	void init();
