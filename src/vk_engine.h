@@ -10,12 +10,24 @@
 #include <vk_mesh.h>
 #include <glm/glm.hpp>
 
+// Add camera data
+struct GPUCameraData {
+	glm::mat4 view;
+	glm::mat4 projection;
+	glm::mat4 viewproj;
+};
+
 struct FrameData {
 	VkSemaphore _presentSemaphore, _renderSemaphore;
 	VkFence _renderFence;
 
 	VkCommandPool _commandPool;
 	VkCommandBuffer _mainCommandBuffer;
+
+	//Add camera data
+	AllocatedBuffer cameraBuffer;
+
+	VkDescriptorSet globalDescriptor;
 };
 
 struct MeshPushConstants
@@ -189,6 +201,9 @@ private:
 
 	// --- init scene ---
 	void init_scene();
+
+	// --- AllocateBuffer ---
+	AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 };
 
 class PipelineBuilder {
