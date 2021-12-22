@@ -17,6 +17,15 @@ struct GPUCameraData {
 	glm::mat4 viewproj;
 };
 
+// Add scene data
+struct GPUSceneData {
+	glm::vec4 fogColor;
+	glm::vec4 fogDistances;
+	glm::vec4 ambientColor;
+	glm::vec4 sunlightDirection;
+	glm::vec4 sunlightColot;
+};
+
 struct FrameData {
 	VkSemaphore _presentSemaphore, _renderSemaphore;
 	VkFence _renderFence;
@@ -157,6 +166,13 @@ public:
 	VkDescriptorSetLayout _globalSetLayout;
 	VkDescriptorPool _descriptorPool;
 
+	//检车底层GPU硬件信息
+	VkPhysicalDeviceProperties _gpuProperties;
+
+	// Add scene data
+	GPUSceneData _sceneParameters;
+	AllocatedBuffer _sceneParameterBuffer;
+
 	//initializes everything in the engine
 	void init();
 
@@ -209,6 +225,9 @@ private:
 	// --- AllocateBuffer ---
 	AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 	void init_descriptors();
+
+	//Add pad alignment
+	size_t pad_uniform_buffer_size(size_t originalSize);
 };
 
 class PipelineBuilder {

@@ -250,6 +250,9 @@ void VulkanEngine::init_vulkan()
 	allocatorInfo.device = _device;
 	allocatorInfo.instance = _instance;
 	vmaCreateAllocator(&allocatorInfo, &_allocator);
+
+	vkGetPhysicalDeviceProperties(_chosenGPU, &_gpuProperties);
+	std::cout << "The GPU has a minimum buffer alignment of" << _gpuProperties.limits.minUniformBufferOffsetAlignment << std::endl;
 }
 
 void VulkanEngine::init_swapchain()
@@ -915,4 +918,15 @@ void VulkanEngine::init_descriptors()
 
 		vkUpdateDescriptorSets(_device, 1, &setWrite, 0, nullptr);
 	}
+}
+
+size_t VulkanEngine::pad_uniform_buffer_size(size_t originalSize)
+{
+	size_t minUboAlignment = _gpuProperties.limits.minUniformBufferOffsetAlignment;
+	size_t alignedSize = originalSize;
+	if (minUboAlignment > 0)
+	{
+		alignedSize = (alignedSize + minUboAlignment - 1 ) & ~(minUboAlignment - 1);
+	}
+	return alignedSize;
 }
