@@ -153,6 +153,10 @@ public:
 
 	FrameData& get_current_frame();
 
+	//Add Descriptor
+	VkDescriptorSetLayout _globalSetLayout;
+	VkDescriptorPool _descriptorPool;
+
 	//initializes everything in the engine
 	void init();
 
@@ -204,6 +208,7 @@ private:
 
 	// --- AllocateBuffer ---
 	AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
+	void init_descriptors();
 };
 
 class PipelineBuilder {
