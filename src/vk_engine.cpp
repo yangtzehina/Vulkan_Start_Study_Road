@@ -926,6 +926,7 @@ size_t VulkanEngine::pad_uniform_buffer_size(size_t originalSize)
 	size_t alignedSize = originalSize;
 	if (minUboAlignment > 0)
 	{
+		//这种对其的操作是做了什么
 		alignedSize = (alignedSize + minUboAlignment - 1 ) & ~(minUboAlignment - 1);
 	}
 	return alignedSize;
