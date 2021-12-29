@@ -513,6 +513,12 @@ void VulkanEngine::init_pipelines()
 		std::cout << "Triangle vertex shader successfully loaded" << std::endl;
 	}
 
+	VkShaderModule colorMeshShader;
+	if (!load_shader_module("../../shaders/default_lit.frag.spv", &colorMeshShader))
+	{
+		std::cout << "Error when building the color mesh shader" << std::endl;
+	}
+
 	VkPipelineLayoutCreateInfo pipeline_layout_info = vkinit::pipeline_layout_create_info();
 
 	VK_CHECK(vkCreatePipelineLayout(_device, &pipeline_layout_info, nullptr, &_trianglePipelineLayout));
@@ -755,6 +761,19 @@ Mesh* VulkanEngine::get_mesh(const std::string& name)
 
 void VulkanEngine::draw_objects(VkCommandBuffer cmd, RenderObject* first, int count)
 {
+	float framed = (_frameNumber / 120.f);
+
+	_sceneParameters.ambientColor = { sin(framed), 0, cos(framed), 1 };
+
+	char* sceneData;
+	vmaMapMemory(_allocator, _sceneParameterBuffer._allocation, (void**)&sceneData);
+
+	int frameIndex = _frameNumber % FRAME_OVERLAP;
+	sceneData += pad_uniform_buffer_size(sizeof(GPUSceneData)) * frameIndex;
+	memcpy(sceneData, &_sceneParameters, sizeof(GPUSceneData));
+	vmaUnmapMemory(_allocator, _sceneParameterBuffer._allocation);
+
+	//camera buffer
 	glm::vec3 camPos = { 0.f, -6.f, -10.f };
 
 	glm::mat4 view = glm::translate(glm::mat4(1.f), camPos);
@@ -784,8 +803,11 @@ void VulkanEngine::draw_objects(VkCommandBuffer cmd, RenderObject* first, int co
 		{
 			vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, object.material->pipeline);
 			lastMaterial = object.material;
+
+			uint32_t uniform_offet = pad_uniform_buffer_size(sizeof(GPUSceneData)) * frameIndex;
+
 			vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, object.material->pipelineLayout, 
-				0, 1, &get_current_frame().globalDescriptor, 0, nullptr);
+				0, 1, &get_current_frame().globalDescriptor, 1, &uniform_offet);
 		}
 
 		glm::mat4 model = object.transformMatrix;
@@ -858,7 +880,8 @@ AllocatedBuffer VulkanEngine::create_buffer(size_t allocSize, VkBufferCreateFlag
 void VulkanEngine::init_descriptors()
 {
 	std::vector<VkDescriptorPoolSize> sizes = {
-		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10}
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 10},
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 10 }
 	};
 
 	VkDescriptorPoolCreateInfo pool_info = {};
@@ -882,7 +905,7 @@ void VulkanEngine::init_descriptors()
 	VkDescriptorSetLayoutBinding cameraBind = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0);
 
 	//binding for scene data at 1
-	VkDescriptorSetLayoutBinding sceneBind = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
+	VkDescriptorSetLayoutBinding sceneBind = vkinit::descriptorset_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 1);
 
 	VkDescriptorSetLayoutBinding bindings[] = {cameraBind, sceneBind};
 
@@ -916,12 +939,12 @@ void VulkanEngine::init_descriptors()
 
 		VkDescriptorBufferInfo sceneInfo;
 		sceneInfo.buffer = _sceneParameterBuffer._buffer;
-		sceneInfo.offset = pad_uniform_buffer_size(sizeof(GPUSceneData)) * i;
+		sceneInfo.offset = 0;
 		sceneInfo.range = sizeof(GPUSceneData);
 
 		VkWriteDescriptorSet cameraWrite = vkinit::write_descriptor_buffer(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, _frames[i].globalDescriptor, &cameraInfo, 0);
 
-		VkWriteDescriptorSet sceneWrite = vkinit::write_descriptor_buffer(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, _frames[i].globalDescriptor, &sceneInfo, 1);
+		VkWriteDescriptorSet sceneWrite = vkinit::write_descriptor_buffer(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, _frames[i].globalDescriptor, &sceneInfo, 1);
 	
 		VkWriteDescriptorSet setWrites[] = {cameraWrite, sceneWrite};
 
