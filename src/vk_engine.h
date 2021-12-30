@@ -36,6 +36,9 @@ struct FrameData {
 	//Add camera data
 	AllocatedBuffer cameraBuffer;
 
+	AllocatedBuffer objectBuffer;
+	VkDescriptorSet objectDescriptor;
+
 	VkDescriptorSet globalDescriptor;
 };
 
@@ -75,6 +78,10 @@ struct RenderObject
 	Mesh* mesh;
 	Material* material;
 	glm::mat4 transformMatrix;
+};
+
+struct GPUObjectData {
+	glm::mat4 modelMatrix;
 };
 
 constexpr unsigned int FRAME_OVERLAP = 2;
@@ -164,6 +171,7 @@ public:
 
 	//Add Descriptor
 	VkDescriptorSetLayout _globalSetLayout;
+	VkDescriptorSetLayout _objectSetLayout;
 	VkDescriptorPool _descriptorPool;
 
 	//检车底层GPU硬件信息
